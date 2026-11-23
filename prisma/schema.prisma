@@ -1,0 +1,454 @@
+// Digital Banking Management System - Prisma 7 schema (PostgreSQL)
+//
+// Design rules:
+// 1. Taka sob jaygay Decimal(15,2). Float kokhono na.
+// 2. Transaction-er history kokhono delete hoy na (onDelete: Restrict by default).
+// 3. Balance change hoy shudhu server-er prisma.$transaction-er bhitore.
+// 4. Protita transaction-er jonno LedgerEntry thake (sender-er DEBIT, receiver-er CREDIT).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum AccountType {
+  SAVINGS
+  CURRENT
+  BUSINESS
+}
+
+enum AccountStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  LOAN_DISBURSEMENT
+  LOAN_REPAYMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum EntryDirection {
+  DEBIT
+  CREDIT
+}
+
+enum RequestType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum LoanType {
+  PERSONAL
+  HOME
+  CAR
+  EDUCATION
+  BUSINESS
+}
+
+enum EmploymentStatus {
+  EMPLOYED
+  SELF_EMPLOYED
+  BUSINESS_OWNER
+  STUDENT
+  UNEMPLOYED
+}
+
+enum LoanStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ACTIVE
+  COMPLETED
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum FlagSource {
+  STAFF
+  SYSTEM
+}
+
+enum FlagStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  MONEY_RECEIVED
+  TRANSFER_COMPLETED
+  DEPOSIT_APPROVED
+  DEPOSIT_REJECTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  LOAN_APPROVED
+  LOAN_REJECTED
+  ACCOUNT_STATUS
+  SYSTEM
+}
+
+// ---------------------------------------------------------------------------
+// USER (Admin, Staff, Customer sobai ekhane)
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String     @id @default(cuid())
+  name              String
+  email             String     @unique
+  phone             String?
+  address           String?
+  passwordHash      String
+  pinHash           String? // Transaction PIN, bcrypt hash. Plain PIN kokhono na.
+  pinFailedAttempts Int        @default(0) // ulta PIN bar bar dile lock korar jonno
+  pinLockedUntil    DateTime?
+  role              Role       @default(CUSTOMER)
+  status            UserStatus @default(ACTIVE)
+
+  // Staff customer-er information verify kore
+  isVerified    Boolean   @default(false)
+  verifiedAt    DateTime?
+  verifiedById  String?
+  verifiedBy    User?     @relation("UserVerifiedBy", fields: [verifiedById], references: [id])
+  verifiedUsers User[]    @relation("UserVerifiedBy")
+
+  // Kon staff ei customer-ke register korechhe
+  registeredById  String?
+  registeredBy    User?  @relation("UserRegisteredBy", fields: [registeredById], references: [id])
+  registeredUsers User[] @relation("UserRegisteredBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  accounts         Account[]                @relation("AccountOwner")
+  openedAccounts   Account[]                @relation("AccountOpenedBy")
+  initiatedTxns    Transaction[]            @relation("TxnInitiator")
+  requests         DepositWithdrawRequest[] @relation("RequestOwner")
+  reviewedRequests DepositWithdrawRequest[] @relation("RequestReviewer")
+  loans            Loan[]                   @relation("LoanApplicant")
+  forwardedLoans   Loan[]                   @relation("LoanForwarder")
+  decidedLoans     Loan[]                   @relation("LoanDecider")
+  loanNotes        LoanNote[]
+  notifications    Notification[]
+  raisedFlags      TransactionFlag[]        @relation("FlagRaisedBy")
+  resolvedFlags    TransactionFlag[]        @relation("FlagResolvedBy")
+  auditLogs        AuditLog[]
+
+  @@index([role, status])
+}
+
+// ---------------------------------------------------------------------------
+// ACCOUNT
+// ---------------------------------------------------------------------------
+
+model Account {
+  id            String        @id @default(cuid())
+  accountNumber String        @unique
+  type          AccountType
+  status        AccountStatus @default(ACTIVE)
+  balance       Decimal       @default(0) @db.Decimal(15, 2)
+  currency      String        @default("BDT")
+
+  // Admin per-account limit set korte pare. null hole global SystemSetting use hobe.
+  dailyTransferLimit   Decimal? @db.Decimal(15, 2)
+  maxTransactionAmount Decimal? @db.Decimal(15, 2)
+  minBalance           Decimal? @db.Decimal(15, 2)
+
+  ownerId    String
+  owner      User   @relation("AccountOwner", fields: [ownerId], references: [id])
+  openedById String
+  openedBy   User   @relation("AccountOpenedBy", fields: [openedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sentTransactions     Transaction[]            @relation("TxnSender")
+  receivedTransactions Transaction[]            @relation("TxnReceiver")
+  ledgerEntries        LedgerEntry[]
+  requests             DepositWithdrawRequest[]
+  loans                Loan[]
+
+  @@index([ownerId])
+}
+
+// ---------------------------------------------------------------------------
+// TRANSACTION
+// Ekta transfer = ekta Transaction row + duita LedgerEntry (sender DEBIT, receiver CREDIT)
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id            String            @id @default(cuid())
+  txnId         String            @unique // user-ke dekhano unique ID, jemon TXN-20261123-AB12CD
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  amount        Decimal           @db.Decimal(15, 2)
+  fee           Decimal           @default(0) @db.Decimal(15, 2)
+  description   String?
+  failureReason String?
+
+  senderAccountId   String?
+  senderAccount     Account? @relation("TxnSender", fields: [senderAccountId], references: [id])
+  receiverAccountId String?
+  receiverAccount   Account? @relation("TxnReceiver", fields: [receiverAccountId], references: [id])
+
+  initiatedById String
+  initiatedBy   User   @relation("TxnInitiator", fields: [initiatedById], references: [id])
+
+  // Duplicate transaction thamanor jonno. Frontend proti form-e ekta UUID pathabe.
+  idempotencyKey String?
+
+  loanId String?
+  loan   Loan?   @relation(fields: [loanId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  ledgerEntries LedgerEntry[]
+  flags         TransactionFlag[]
+  request       DepositWithdrawRequest?
+  installment   LoanInstallment?
+
+  @@unique([initiatedById, idempotencyKey])
+  @@index([createdAt])
+  @@index([senderAccountId, createdAt])
+  @@index([receiverAccountId, createdAt])
+  @@index([type, status])
+}
+
+// Protita account-er statement ar balance history er jonno
+model LedgerEntry {
+  id            String         @id @default(cuid())
+  transactionId String
+  transaction   Transaction    @relation(fields: [transactionId], references: [id])
+  accountId     String
+  account       Account        @relation(fields: [accountId], references: [id])
+  direction     EntryDirection
+  amount        Decimal        @db.Decimal(15, 2) // fee shoho total jeta ei account theke gelo ba ashlo
+  balanceAfter  Decimal        @db.Decimal(15, 2)
+  createdAt     DateTime       @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([transactionId])
+}
+
+// ---------------------------------------------------------------------------
+// DEPOSIT / WITHDRAWAL REQUEST (staff/admin approval workflow)
+// ---------------------------------------------------------------------------
+
+model DepositWithdrawRequest {
+  id          String        @id @default(cuid())
+  type        RequestType
+  amount      Decimal       @db.Decimal(15, 2)
+  description String?
+  status      RequestStatus @default(PENDING)
+
+  accountId     String
+  account       Account @relation(fields: [accountId], references: [id])
+  requestedById String
+  requestedBy   User    @relation("RequestOwner", fields: [requestedById], references: [id])
+
+  // requestedById == reviewedById hole approve kora jabe na (API-te check hobe)
+  reviewedById String?
+  reviewedBy   User?     @relation("RequestReviewer", fields: [reviewedById], references: [id])
+  reviewNote   String?
+  reviewedAt   DateTime?
+
+  // Approve hole je Transaction toiri hoy
+  transactionId String?      @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  createdAt DateTime @default(now()) // Request Date
+
+  @@index([status, createdAt])
+  @@index([requestedById])
+}
+
+// ---------------------------------------------------------------------------
+// LOAN
+// ---------------------------------------------------------------------------
+
+model Loan {
+  id                 String           @id @default(cuid())
+  loanNumber         String           @unique
+  type               LoanType
+  status             LoanStatus       @default(PENDING)
+  requestedAmount    Decimal          @db.Decimal(15, 2)
+  approvedAmount     Decimal?         @db.Decimal(15, 2)
+  durationMonths     Int
+  interestRate       Decimal?         @db.Decimal(5, 2) // yearly %
+  monthlyIncome      Decimal          @db.Decimal(15, 2)
+  employmentStatus   EmploymentStatus
+  description        String?
+  monthlyInstallment Decimal?         @db.Decimal(15, 2)
+  remainingBalance   Decimal?         @db.Decimal(15, 2)
+  decisionNote       String?
+
+  applicantId String
+  applicant   User    @relation("LoanApplicant", fields: [applicantId], references: [id])
+  // Je account-e loan disburse hobe ar jekhan theke repayment katbe
+  accountId   String
+  account     Account @relation(fields: [accountId], references: [id])
+
+  // Staff forward kore, Admin approve/reject kore
+  forwardedById String?
+  forwardedBy   User?     @relation("LoanForwarder", fields: [forwardedById], references: [id])
+  forwardedAt   DateTime?
+  decidedById   String?
+  decidedBy     User?     @relation("LoanDecider", fields: [decidedById], references: [id])
+  decidedAt     DateTime?
+  disbursedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notes        LoanNote[]
+  installments LoanInstallment[]
+  transactions Transaction[] // disbursement ar repayment er transaction
+
+  @@index([status, createdAt])
+  @@index([applicantId])
+}
+
+// Staff-er internal note (customer dekhte pabe na)
+model LoanNote {
+  id        String   @id @default(cuid())
+  loanId    String
+  loan      Loan     @relation(fields: [loanId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  note      String
+  createdAt DateTime @default(now())
+
+  @@index([loanId])
+}
+
+// Repayment schedule. Paid installment = repayment history.
+model LoanInstallment {
+  id            String            @id @default(cuid())
+  loanId        String
+  loan          Loan              @relation(fields: [loanId], references: [id])
+  installmentNo Int
+  dueDate       DateTime
+  amount        Decimal           @db.Decimal(15, 2)
+  principalPart Decimal           @db.Decimal(15, 2)
+  interestPart  Decimal           @db.Decimal(15, 2)
+  status        InstallmentStatus @default(PENDING)
+  paidAt        DateTime?
+
+  transactionId String?      @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  @@unique([loanId, installmentNo])
+  @@index([status, dueDate])
+}
+
+// ---------------------------------------------------------------------------
+// SUSPICIOUS TRANSACTION FLAG (staff nije flag kore, ba rule-based system)
+// ---------------------------------------------------------------------------
+
+model TransactionFlag {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  source        FlagSource
+  reason        String
+  status        FlagStatus  @default(OPEN)
+
+  raisedById String? // SYSTEM flag hole null
+  raisedBy   User?   @relation("FlagRaisedBy", fields: [raisedById], references: [id])
+
+  resolvedById   String?
+  resolvedBy     User?     @relation("FlagResolvedBy", fields: [resolvedById], references: [id])
+  resolutionNote String?
+  resolvedAt     DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([transactionId])
+}
+
+// ---------------------------------------------------------------------------
+// NOTIFICATION, SETTINGS, AUDIT
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+// Bank-wide setting. Shudhu ekta row thakbe (id = 1). Shudhu Admin change korte pare.
+model SystemSetting {
+  id                   Int      @id @default(1)
+  dailyTransferLimit   Decimal  @default(200000) @db.Decimal(15, 2)
+  maxSingleTransaction Decimal  @default(100000) @db.Decimal(15, 2)
+  minAccountBalance    Decimal  @default(500) @db.Decimal(15, 2)
+  transferFee          Decimal  @default(0) @db.Decimal(15, 2)
+  updatedAt            DateTime @updatedAt
+}
+
+// Kon user ki korlo (approve, freeze, limit change ityadi) er record
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
