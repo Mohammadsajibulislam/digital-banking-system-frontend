@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Cache Components ei project-e lagbe na. On thakle auth() use kora
+  // page-e Suspense chhara error dey, tai off rakhi.
+  cacheComponents: false,
   turbopack: {
     rules: {
       "*.css": {
