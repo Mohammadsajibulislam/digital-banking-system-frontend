@@ -1,5 +1,5 @@
-import DashboardPlaceholder from "@/components/dashboard-placeholder";
+import CustomerDashboard from "@/features/dashboard/customer-dashboard";
 
 export default function CustomerPage() {
-  return <DashboardPlaceholder title="Customer Dashboard" />;
+  return <CustomerDashboard />;
 }
