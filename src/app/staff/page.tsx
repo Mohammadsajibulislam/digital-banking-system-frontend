@@ -1,5 +1,5 @@
-import DashboardPlaceholder from "@/components/dashboard-placeholder";
+import StaffDashboard from "@/features/dashboard/staff-dashboard";
 
 export default function StaffPage() {
-  return <DashboardPlaceholder title="Staff Dashboard" />;
+  return <StaffDashboard />;
 }

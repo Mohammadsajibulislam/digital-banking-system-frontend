@@ -1,3 +1,5 @@
+import type { CustomerChartsDTO } from "./analytics";
+
 // Taka (Decimal) API theke string hishebe ashe, tai ekhane string
 
 export type AccountType = "SAVINGS" | "CURRENT" | "BUSINESS";
@@ -42,6 +44,7 @@ export interface CustomerDashboardDTO {
   totalWithdrawals: string;
   recentTransactions: RecentTransactionDTO[];
   activeLoans: ActiveLoanDTO[];
+  charts: CustomerChartsDTO;
 }
 
 // ---- Fund transfer ----

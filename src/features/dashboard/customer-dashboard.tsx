@@ -15,6 +15,7 @@ import {
 import { selectAccount } from "@/features/accounts/accounts-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { formatDate, formatMoney } from "@/lib/utils";
+import CustomerCharts from "./customer-charts";
 
 function StatCard({
   label,
@@ -299,6 +300,8 @@ export default function CustomerDashboard() {
           )}
         </section>
       </div>
+
+      {data && <CustomerCharts charts={data.charts} />}
 
       {/* Active loans */}
       {data && data.activeLoans.length > 0 && (
