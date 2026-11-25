@@ -64,7 +64,7 @@ export async function getSettings() {
 // Eta money-transaction-er BAHIRE chole, jate ulta PIN-er attempt count
 // transfer fail holeo database-e thake.
 // ---------------------------------------------------------------------------
-async function verifyPin(userId: string, pin: string) {
+export async function verifyPin(userId: string, pin: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { pinHash: true, pinFailedAttempts: true, pinLockedUntil: true },
