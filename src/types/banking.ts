@@ -43,3 +43,37 @@ export interface CustomerDashboardDTO {
   recentTransactions: RecentTransactionDTO[];
   activeLoans: ActiveLoanDTO[];
 }
+
+// ---- Fund transfer ----
+
+export interface RecipientLookupDTO {
+  accountNumber: string;
+  accountType: AccountType;
+  ownerName: string; // masked, jemon "Karim A***"
+  isOwnAccount: boolean;
+  fee: string;
+}
+
+export interface TransferRequestDTO {
+  fromAccountId: string;
+  toAccountNumber: string;
+  amount: string;
+  description?: string;
+  pin: string;
+  idempotencyKey: string;
+}
+
+export interface TransferResultDTO {
+  id: string;
+  txnId: string;
+  status: string;
+  amount: string;
+  fee: string;
+  total: string;
+  description: string | null;
+  createdAt: string;
+  fromAccountNumber: string;
+  toAccountNumber: string;
+  toName: string;
+  duplicate: boolean;
+}
