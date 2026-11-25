@@ -9,6 +9,7 @@ import { downloadReceipt } from "@/lib/receipt";
 import { formatMoney, getErrorMessage } from "@/lib/utils";
 import { TYPE_LABELS, formatDateTime } from "./helpers";
 import { useGetTransactionQuery } from "./transactions-api";
+import TransactionFlagPanel from "@/features/flags/transaction-flag-panel";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return <div className="flex justify-between gap-4 py-3"><dt className="text-sm text-slate-500">{label}</dt><dd className="text-right text-sm font-medium text-slate-900">{value}</dd></div>;
@@ -47,6 +48,7 @@ export default function TransactionDetail({ txnId, backHref }: { txnId: string; 
           {tx.description && <Row label="Description" value={tx.description} />}{tx.failureReason && <Row label="Failure reason" value={<span className="text-red-600">{tx.failureReason}</span>} />}
         </dl>
         {tx.ledger.length > 0 && <div className="border-t border-slate-100 p-6"><h2 className="mb-3 text-sm font-semibold text-slate-900">Account impact</h2><ul className="space-y-2">{tx.ledger.map((line) => <li key={line.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-2.5 text-sm"><span className="text-slate-600">Account {line.accountNumber} <span className={line.direction === "CREDIT" ? "text-emerald-600" : "text-rose-600"}>({line.direction === "CREDIT" ? "+" : "-"}{formatMoney(line.amount)})</span></span><span className="font-medium text-slate-900">Balance: {formatMoney(line.balanceAfter)}</span></li>)}</ul></div>}
+        {!isCustomer && <TransactionFlagPanel txnId={tx.txnId} />}
         <div className="border-t border-slate-100 p-6">{downloadError && <p role="alert" className="mb-3 text-sm text-red-600">{downloadError}</p>}<button type="button" onClick={handleDownload} disabled={downloading} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-700 py-2.5 font-medium text-white hover:bg-blue-800 disabled:opacity-60"><FiDownload className="h-4 w-4" />{downloading ? "Preparing receipt..." : "Download receipt (PDF)"}</button></div>
       </div>
     </div>

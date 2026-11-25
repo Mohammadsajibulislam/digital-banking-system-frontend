@@ -3,6 +3,7 @@ import {
   FiBriefcase,
   FiCreditCard,
   FiHome,
+  FiFlag,
   FiList,
   FiRepeat,
   FiSend,
@@ -33,6 +34,7 @@ export const NAV_ITEMS: Record<AppRole, NavItem[]> = {
     { label: "Transactions", href: "/staff/transactions", icon: FiList },
     { label: "Requests", href: "/staff/requests", icon: FiRepeat },
     { label: "Loans", href: "/staff/loans", icon: FiBriefcase },
+    { label: "Flagged", href: "/staff/flags", icon: FiFlag },
   ],
   ADMIN: [
     { label: "Dashboard", href: "/admin", icon: FiHome },
@@ -41,6 +43,7 @@ export const NAV_ITEMS: Record<AppRole, NavItem[]> = {
     { label: "Transactions", href: "/admin/transactions", icon: FiList },
     { label: "Requests", href: "/admin/requests", icon: FiRepeat },
     { label: "Loans", href: "/admin/loans", icon: FiBriefcase },
+    { label: "Flags", href: "/admin/flags", icon: FiFlag },
     { label: "Settings", href: "/admin/settings", icon: FiSettings },
   ],
 };

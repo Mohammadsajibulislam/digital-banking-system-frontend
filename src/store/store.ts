@@ -7,6 +7,7 @@ import transactionsReducer from "@/features/transactions/transactions-slice";
 import loansReducer from "@/features/loans/loans-slice";
 import customersReducer from "@/features/customers/customers-slice";
 import accountAdminReducer from "@/features/customers/account-admin-slice";
+import flagsReducer from "@/features/flags/flags-slice";
 
 // Next.js-e proti request/user-er jonno alada store lagbe (global singleton na),
 // tai function. Eta StoreProvider-e ekbar call hoy.
@@ -21,6 +22,7 @@ export const makeStore = (user: AuthUser | null) =>
       loans: loansReducer,
       customers: customersReducer,
       accountAdmin: accountAdminReducer,
+      flags: flagsReducer,
     },
     preloadedState: {
       auth: { user },
@@ -31,6 +33,11 @@ export const makeStore = (user: AuthUser | null) =>
             : user?.role === "ADMIN"
               ? "UNDER_REVIEW"
               : "",
+        page: 1,
+        pageSize: 10,
+      },
+      flags: {
+        status: user?.role === "ADMIN" ? "OPEN" : "",
         page: 1,
         pageSize: 10,
       },
