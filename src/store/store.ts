@@ -3,6 +3,7 @@ import { baseApi } from "@/features/api/base-api";
 import authReducer, { type AuthUser } from "@/features/auth/auth-slice";
 import accountsReducer from "@/features/accounts/accounts-slice";
 import uiReducer from "@/features/ui/ui-slice";
+import transactionsReducer from "@/features/transactions/transactions-slice";
 
 // Next.js-e proti request/user-er jonno alada store lagbe (global singleton na),
 // tai function. Eta StoreProvider-e ekbar call hoy.
@@ -13,6 +14,7 @@ export const makeStore = (user: AuthUser | null) =>
       auth: authReducer,
       accounts: accountsReducer,
       ui: uiReducer,
+      transactions: transactionsReducer,
     },
     preloadedState: { auth: { user } },
     middleware: (getDefaultMiddleware) =>
