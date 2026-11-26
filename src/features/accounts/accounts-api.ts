@@ -1,5 +1,6 @@
 import { baseApi } from "@/features/api/base-api";
 import type { AccountDTO, CustomerDashboardDTO } from "@/types/banking";
+import type { AccountDetailDTO } from "@/types/account-details";
 
 export const accountsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -12,8 +13,12 @@ export const accountsApi = baseApi.injectEndpoints({
       query: (accountId) => `/dashboard/customer?accountId=${accountId}`,
       providesTags: ["Dashboard", "Account", "Transaction", "Loan"],
     }),
+    getAccountDetails: builder.query<AccountDetailDTO[], void>({
+      query: () => "/accounts/details",
+      providesTags: ["Account", "Transaction"],
+    }),
   }),
 });
 
-export const { useGetMyAccountsQuery, useGetCustomerDashboardQuery } =
+export const { useGetMyAccountsQuery, useGetCustomerDashboardQuery, useGetAccountDetailsQuery } =
   accountsApi;

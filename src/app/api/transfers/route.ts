@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { HttpError, handleApiError, requireUser } from "@/lib/auth-guard";
 import { executeTransfer } from "@/lib/services/transfer";
+import { screenTransfer } from "@/lib/services/risk";
 
 // Server-e input abar validate kori. Frontend validation shudhu UX-er jonno.
 const transferSchema = z.object({
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     }
 
     const result = await executeTransfer(user.id, parsed.data);
+    if (!result.duplicate) {
+      after(() => screenTransfer(result.id));
+    }
     return NextResponse.json(result, { status: result.duplicate ? 200 : 201 });
   } catch (error) {
     return handleApiError(error);

@@ -5,6 +5,7 @@ import { FiLogOut, FiMenu } from "react-icons/fi";
 import { toggleSidebar } from "@/features/ui/ui-slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { getInitials } from "@/lib/utils";
+import NotificationBell from "@/features/notifications/notification-bell";
 
 export default function Topbar() {
   const dispatch = useAppDispatch();
@@ -24,6 +25,7 @@ export default function Topbar() {
       <div className="hidden lg:block" />
 
       <div className="flex items-center gap-3">
+        <NotificationBell />
         <div className="text-right">
           <p className="text-sm font-medium text-slate-900">{user?.name}</p>
           <p className="text-xs capitalize text-slate-500">
