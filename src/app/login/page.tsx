@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import ThemeToggle from "@/components/ui/theme-toggle";
 
 const DEMO_ACCOUNTS = [
   { label: "Admin", email: "admin@digitalbank.com", password: "Admin@123" },
@@ -45,6 +46,9 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="fixed right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="text-2xl font-semibold text-slate-900">
           Digital Banking

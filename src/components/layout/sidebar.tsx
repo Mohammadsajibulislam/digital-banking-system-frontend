@@ -24,18 +24,18 @@ export default function Sidebar({ role }: { role: AppRole }) {
       {/* Mobile-e drawer khulle pichoner overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
           onClick={() => dispatch(closeSidebar())}
           aria-hidden="true"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-slate-900 text-slate-300 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-[#0f172a] text-[#cbd5e1] transition-transform dark:border-r dark:border-[#1e293b] dark:bg-[#070d1c] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-slate-800 px-5">
+        <div className="flex h-16 items-center justify-between border-b border-[#1e293b] px-5">
           <div className="flex items-center gap-2 text-white">
             <FiShield className="h-6 w-6 text-blue-400" />
             <span className="text-lg font-semibold tracking-tight">
@@ -45,7 +45,7 @@ export default function Sidebar({ role }: { role: AppRole }) {
           <button
             type="button"
             onClick={() => dispatch(closeSidebar())}
-            className="rounded p-1 text-slate-400 hover:text-white lg:hidden"
+            className="rounded p-1 text-[#94a3b8] hover:text-white lg:hidden"
             aria-label="Close menu"
           >
             <FiX className="h-5 w-5" />
@@ -64,7 +64,7 @@ export default function Sidebar({ role }: { role: AppRole }) {
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active
                     ? "bg-blue-600 text-white"
-                    : "hover:bg-slate-800 hover:text-white"
+                    : "hover:bg-[#1e293b] hover:text-white"
                 }`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -74,7 +74,7 @@ export default function Sidebar({ role }: { role: AppRole }) {
           })}
         </nav>
 
-        <div className="border-t border-slate-800 px-5 py-4 text-xs text-slate-500">
+        <div className="border-t border-[#1e293b] px-5 py-4 text-xs text-[#64748b]">
           Simulated banking system. No real money.
         </div>
       </aside>

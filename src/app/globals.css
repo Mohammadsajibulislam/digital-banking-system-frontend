@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --chart-grid: #e2e8f0;
+  --chart-axis: #64748b;
+  --chart-surface: #ffffff;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-fg: #0f172a;
 }
 
 @theme inline {
@@ -12,15 +20,93 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+  --surface: #131c2e;
+
+  --color-slate-50: #0b1120;
+  --color-slate-100: #1b2638;
+  --color-slate-200: #263349;
+  --color-slate-300: #39485f;
+  --color-slate-400: #7b8aa3;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #b3bfd1;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+  --color-slate-950: #f8fafc;
+
+  --color-blue-50: rgb(59 130 246 / 0.14);
+  --color-blue-100: rgb(59 130 246 / 0.22);
+  --color-emerald-50: rgb(16 185 129 / 0.14);
+  --color-rose-50: rgb(244 63 94 / 0.14);
+  --color-amber-50: rgb(245 158 11 / 0.14);
+  --color-red-50: rgb(239 68 68 / 0.14);
+  --color-violet-50: rgb(139 92 246 / 0.14);
+  --color-sky-50: rgb(14 165 233 / 0.14);
+
+  --color-emerald-200: rgb(16 185 129 / 0.35);
+  --color-red-200: rgb(239 68 68 / 0.35);
+  --color-red-300: rgb(239 68 68 / 0.45);
+  --color-amber-300: rgb(245 158 11 / 0.45);
+
+  --chart-grid: #2b3a52;
+  --chart-axis: #94a3b8;
+  --chart-surface: #131c2e;
+  --chart-tooltip-bg: #1b2740;
+  --chart-tooltip-fg: #f1f5f9;
+}
+
+html.dark .bg-white {
+  background-color: var(--surface);
+}
+
+html.dark :is(.text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900) {
+  color: #93c5fd;
+}
+html.dark :is(.text-emerald-600, .text-emerald-700, .text-emerald-800) {
+  color: #6ee7b7;
+}
+html.dark :is(.text-red-600, .text-red-700, .text-red-800) {
+  color: #fca5a5;
+}
+html.dark .text-rose-600 {
+  color: #fda4af;
+}
+html.dark :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) {
+  color: #fcd34d;
+}
+html.dark .text-violet-600 {
+  color: #c4b5fd;
+}
+html.dark :is(.text-sky-600, .text-sky-700) {
+  color: #7dd3fc;
+}
+
+.recharts-cartesian-axis-tick-value {
+  fill: var(--chart-axis);
+}
+.recharts-cartesian-grid line {
+  stroke: var(--chart-grid);
+}
+.recharts-sector {
+  stroke: var(--chart-surface);
+}
+.recharts-default-tooltip {
+  background-color: var(--chart-tooltip-bg) !important;
+  border-color: var(--chart-grid) !important;
+  border-radius: 8px;
+  color: var(--chart-tooltip-fg);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
